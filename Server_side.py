@@ -6,28 +6,24 @@ import matplotlib.animation as animation
 from threading import Thread
 from collections import deque
 
-# ======== CONFIGURATION ========
-INTERFACE = "\\Device\\NPF_Loopback"  # Or 'Wi-Fi'
+INTERFACE = "\\Device\\NPF_Loopback"  
 CLIENT_IP = "127.0.0.1"
 PORT = 9999
 DDOS_THRESHOLD = 50
 ACK_MESSAGE = b"ACK"
 PACKET_LIMIT = 20000
 
-# ======== GLOBAL STATE ========
 packet_log = []
 udp_sent_count = 0
 start_time = time.time()
-packet_rates = deque(maxlen=20)  # Store last 20 rate samples (5s window each)
+packet_rates = deque(maxlen=20)  
 
-# ======== FUNCTIONS ========
 def analyze_traffic():
-    """Check packet rate every 5s, store rate, detect DDoS."""
     global packet_log
     while True:
         time.sleep(5)
         now = time.time()
-        packet_log = [t for t in packet_log if now - t < 5]  # keep last 5s only
+        packet_log = [t for t in packet_log if now - t < 5]  
         packet_rate = len(packet_log) / 5
         packet_rates.append(packet_rate)
 
@@ -48,9 +44,8 @@ def respond_to_sender(ip, port):
         print(f"[Error] Failed to send ACK: {e}")
 
 def live_plot():
-    """Live-updating graph of packet rate."""
     fig, ax = plt.subplots()
-    ax.set_ylim(0, 100)  # adjust max y to expected traffic
+    ax.set_ylim(0, 100) 
     ax.set_title("UDP Packet Rate (packets/sec)")
     ax.set_xlabel("Time (5s windows)")
     ax.set_ylabel("Rate")
@@ -58,7 +53,7 @@ def live_plot():
     line, = ax.plot([], [], lw=2)
 
     def update(frame):
-        ax.set_xlim(0, max(10, len(packet_rates)))  # dynamic x range
+        ax.set_xlim(0, max(10, len(packet_rates)))  
         line.set_data(range(len(packet_rates)), list(packet_rates))
         return line,
 
@@ -88,7 +83,6 @@ def start_packet_sniffer():
         except AttributeError:
             continue
 
-    # Final stats when capture stops
     elapsed_time = time.time() - start_time
     print("\n=== SUMMARY ===")
     print(f"Total UDP packets from {CLIENT_IP}: {udp_sent_count}")
@@ -96,8 +90,8 @@ def start_packet_sniffer():
     if elapsed_time > 0:
         print(f"Average rate: {udp_sent_count / elapsed_time:.2f} pkt/s")
 
-# ======== MAIN ========
 if __name__ == "__main__":
     Thread(target=analyze_traffic, daemon=True).start()
     Thread(target=live_plot, daemon=True).start()
     start_packet_sniffer()
+
